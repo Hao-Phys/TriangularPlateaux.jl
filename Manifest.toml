@@ -1,0 +1,10 @@
+# This file is machine-generated - editing it directly is not advised
+
+julia_version = "1.12.1"
+manifest_format = "2.0"
+project_hash = "92b187599a34f07cad4ad1bdd817346505f25bd1"
+
+[[deps.TriangularPlateaux]]
+path = "."
+uuid = "a572323a-de41-413c-be52-a650218af4ba"
+version = "1.0.0-DEV"
