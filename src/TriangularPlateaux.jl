@@ -1,5 +1,14 @@
 module TriangularPlateaux
 
-# Write your package code here.
+using Sunny
+import Sunny: Vec3
+
+include("Types.jl")
+export UUDPlateau, UUUDPlateau
+
+include("SWTs.jl")
+export swts
+
+
 
 end
