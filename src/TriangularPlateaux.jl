@@ -11,7 +11,6 @@ export swts
 
 using JLD2
 include("SCF.jl")
-export find_lb_scf, find_ub_scf
-
+export find_lb_scf, find_ub_scf, renormalized_single_magnon_energies_scf
 
 end
