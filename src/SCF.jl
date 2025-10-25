@@ -36,22 +36,28 @@ function find_lb_scf(state::AbstractTriangularPlateau, Δh, result_path::String;
 
     swt, swt_ref = swts(state, hc)
     mean_field_values = calculate_mean_field_values_lswt(swt_ref; hcubature_opts...)
-    @show "Calculating reference mean field values of swt_ref"
+    println("Calculating reference mean field values of swt_ref")
     scnlswt = SelfConsistentNLSWT(swt)
-    solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
+    try
+         solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
+    catch _
+        @warn "Failed SCF for reference state, cannot proceed. The corresponding state cannot be stable"
+        return NaN, NaN
+    end
+
     mean_field_values0 = copy(scnlswt.mean_field_values)
-    @show "Reference mean field values calculated"
+    println("Reference mean field values calculated")
 
     E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
     @assert isnan(E) "Use more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     while !find_lb && iter ≤ max_iter
-        @show "--------------------------------"
-        @show "J₂=$J₂, Iteration $iter, h_curr=$h_curr"
+        println("--------------------------------")
+        @show J₂, iter, h_curr
         E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
-        @show "Lowest magnon energy E=$E"
-        @show "--------------------------------"
+        println("Lowest magnon energy E=$E")
+        println("--------------------------------")
         if isnan(E)
             h_lo = h_curr
             h_curr = (h_lo + h_hi) / 2
@@ -81,22 +87,28 @@ function find_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::String;
 
     swt, swt_ref = swts(state, hc)
     mean_field_values = calculate_mean_field_values_lswt(swt_ref; hcubature_opts...)
-    @show "Calculating reference mean field values of swt_ref"
-    scnlswt = SelfConsistentNLSWT(swt)
-    solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
-    mean_field_values0 = copy(scnlswt.mean_field_values)
-    @show "Reference mean field values calculated"
+    println("Calculating reference mean field values of swt_ref")
 
+    scnlswt = SelfConsistentNLSWT(swt)
+    try
+        solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
+    catch _
+        @warn "Failed SCF for reference state, cannot proceed. The corresponding state cannot be stable"
+        return NaN, NaN
+    end
+
+    mean_field_values0 = copy(scnlswt.mean_field_values)
+    println("Reference mean field values calculated")
     E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
     @assert isnan(E) "Use more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     while !find_ub && iter ≤ max_iter
-        @show "--------------------------------"
-        @show "J₂=$J₂, Iteration $iter, h_curr=$h_curr"
+        println("--------------------------------")
+        @show J₂, iter, h_curr
         E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
-        @show "Lowest magnon energy E=$E"
-        @show "--------------------------------"
+        println("Lowest magnon energy E=$E")
+        println("--------------------------------")
         if isnan(E)
             h_hi = h_curr
             h_curr = (h_lo + h_hi) / 2
