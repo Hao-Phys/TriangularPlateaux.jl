@@ -1,21 +1,41 @@
 abstract type AbstractTriangularPlateau end
 
-mutable struct UUDPlateau <: AbstractTriangularPlateau
+struct UUDPlateau <: AbstractTriangularPlateau
     J₁ :: Float64
     J₂ :: Float64
-    h  :: Float64
+    mode :: Symbol
+    nbands :: Int
     q_ordering :: Vec3
-    mean_field_values :: Vector{ComplexF64}
 end
 
-UUDPlateau(J1::Float64, J2::Float64, h::Float64) = UUDPlateau(J1, J2,h, Vec3(1/3, 1/3, 0), ComplexF64[])
+function UUDPlateau(J₁::Float64, J₂::Float64, mode::Symbol)
+    @assert mode in (:scf, :one_loop, :one_loop_prime) "Mode must be one of :scf, :one_loop, or :one_loop_prime"
+    return UUDPlateau(J₁, J₂, mode, 3, Vec3(1/3, 1/3, 0))
+end
 
-mutable struct UUUDPlateau <: AbstractTriangularPlateau
+struct UUUDPlateau <: AbstractTriangularPlateau
     J₁ :: Float64
     J₂ :: Float64
-    h  :: Float64
+    mode :: Symbol
+    nbands :: Int
     q_ordering :: Vec3
-    mean_field_values :: Vector{ComplexF64}
 end
 
-UUUDPlateau(J1::Float64, J2::Float64, h::Float64) = UUUDPlateau(J1, J2, h, Vec3(1/2, 1/2, 0), ComplexF64[])
+function UUUDPlateau(J₁::Float64, J₂::Float64, mode::Symbol)
+    @assert mode in (:scf, :one_loop, :one_loop_prime) "Mode must be one of :scf, :one_loop, or :one_loop_prime"
+    return UUUDPlateau(J₁, J₂, mode, 4, Vec3(1/2, 1/2, 0))
+end
+
+function calculate_hc(state::UUDPlateau)
+    (; J₁) = state
+    s = 1/2
+    hc = 3J₁*s
+    return hc 
+end
+
+function calculate_hc(state::UUUDPlateau)
+    (; J₁, J₂) = state
+    s = 1/2
+    hc = 4*(J₁+J₂)*s
+    return hc 
+end

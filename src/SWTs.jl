@@ -1,5 +1,5 @@
-function swts(state::UUDPlateau)
-    (; J₁, J₂, h) = state
+function swts(state::UUDPlateau, h)
+    (; J₁, J₂) = state
     s = 1/2
 
     a = b = 1.0
@@ -41,8 +41,8 @@ function swts(state::UUDPlateau)
     return swt, swt_ref
 end
 
-function swts(state::UUUDPlateau)
-    (; J₁, J₂, h) = state
+function swts(state::UUUDPlateau, h)
+    (; J₁, J₂) = state
     s = 1/2
 
     a = b = 1.0
