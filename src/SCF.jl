@@ -67,7 +67,7 @@ function find_lb_scf(state::AbstractTriangularPlateau, Δh, result_path::String;
     return h_curr, E
 end
 
-function find_ub_scf(state::AbstractTriangularPlateau, Δh; E_tol::Float64=1e-4, max_iter::Int=50, save_trace::Bool=true, result_path::String=joinpath(@__DIR__, "results"), hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
+function find_ub_scf(state::AbstractTriangularPlateau, Δh; E_tol::Float64=1e-4, max_iter::Int=50, result_path::String=joinpath(@__DIR__, "results"), hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
     (; J₁, J₂, nbands) = state
 
     isdir(result_path) || mkpath(result_path)
