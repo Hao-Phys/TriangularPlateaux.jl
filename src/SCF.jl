@@ -1,4 +1,4 @@
-function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlateau, mean_field_values::Vector{ComplexF64}, h; save_trace::Bool=true, result_path::String=joinpath(@__DIR__, "results"), hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
+function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlateau, mean_field_values::Vector{ComplexF64}, h, result_path::String;hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
     (; q_ordering, nbands) = state
     swt, _ = swts(state, h)
     scnlswt = SelfConsistentNLSWT(swt)
@@ -7,9 +7,7 @@ function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlatea
        try
         E, _ = excitations_scnlswt(scnlswt, q_ordering)
         E_renormalized = E[1:nbands]
-        if save_trace
-            jldsave(joinpath(result_path, "scf_$(typeof(state))_J1_$(state.J₁)_J2_$(state.J₂)_h_$(round(h, digits=4)).jld2"); E_renormalized=E_renormalized, mean_field_values=scnlswt.mean_field_values, h=h)
-        end
+        jldsave(joinpath(result_path, "scf_$(typeof(state))_J1_$(state.J₁)_J2_$(state.J₂)_h_$(round(h, digits=4)).jld2"); E_renormalized=E_renormalized, mean_field_values=scnlswt.mean_field_values, h=h)
         return E_renormalized
        catch _
         @warn "Failed to compute renormalized energies after SCF, skipping renormalized energies calculation"
@@ -25,7 +23,7 @@ function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlatea
     end
 end
 
-function find_lb_scf(state::AbstractTriangularPlateau, Δh; E_tol::Float64=1e-4, max_iter::Int=50, save_trace::Bool=true, result_path::String=joinpath(@__DIR__, "results"), hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
+function find_lb_scf(state::AbstractTriangularPlateau, Δh, result_path::String; E_tol::Float64=1e-4, max_iter::Int=50, hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
     (; J₂, nbands) = state
     isdir(result_path) || mkpath(result_path)
 
@@ -44,14 +42,14 @@ function find_lb_scf(state::AbstractTriangularPlateau, Δh; E_tol::Float64=1e-4,
     mean_field_values0 = copy(scnlswt.mean_field_values)
     @show "Reference mean field values calculated"
 
-    E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr; save_trace, result_path, hcubature_opts, nlsolve_opts)[nbands]
+    E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
     @assert isnan(E) "Use more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     while !find_lb && iter ≤ max_iter
         @show "--------------------------------"
         @show "J₂=$J₂, Iteration $iter, h_curr=$h_curr"
-        E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr; save_trace, result_path, hcubature_opts, nlsolve_opts)[nbands]
+        E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
         @show "Lowest magnon energy E=$E"
         @show "--------------------------------"
         if isnan(E)
@@ -89,14 +87,14 @@ function find_ub_scf(state::AbstractTriangularPlateau, Δh; E_tol::Float64=1e-4,
     mean_field_values0 = copy(scnlswt.mean_field_values)
     @show "Reference mean field values calculated"
 
-    E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr; save_trace, result_path, hcubature_opts, nlsolve_opts)[nbands]
+    E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
     @assert isnan(E) "Use more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     while !find_ub && iter ≤ max_iter
         @show "--------------------------------"
         @show "J₂=$J₂, Iteration $iter, h_curr=$h_curr"
-        E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr; save_trace, result_path, hcubature_opts, nlsolve_opts)[nbands]
+        E = renormalized_single_magnon_energies_scf(state, mean_field_values0, h_curr, result_path; hcubature_opts, nlsolve_opts)[nbands]
         @show "Lowest magnon energy E=$E"
         @show "--------------------------------"
         if isnan(E)
