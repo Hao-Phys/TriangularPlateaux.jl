@@ -36,6 +36,6 @@ end
 function calculate_hc(state::UUUDPlateau)
     (; J₁, J₂) = state
     s = 1/2
-    hc = 4*(J₁+J₂)*s
+    hc = J₂ > J₁/8 ? 4(J₁+J₂)*s : 4(J₁+1/8)*s
     return hc 
 end

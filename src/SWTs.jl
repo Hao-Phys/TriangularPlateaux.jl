@@ -27,7 +27,7 @@ function swts(state::UUDPlateau, h)
     sys_min = reshape_supercell(sys, [1 0 0; -1 3 0; 0 0 1])
     swt = SpinWaveTheory(sys_min; measure=ssf_perp(sys_min))
 
-    hc = 3J₁*s
+    hc = calculate_hc(state)
     set_field!(sys, [0,0,hc])
 
     if J₂ > 1/8 * J₁
@@ -64,7 +64,7 @@ function swts(state::UUUDPlateau, h)
 
     swt = SpinWaveTheory(sys; measure=ssf_perp(sys))
 
-    hc = 4(J₁+J₂)*s
+    hc = calculate_hc(state)
 
     set_field!(sys, [0,0,hc])
     if J₂ < 1/8 * J₁
