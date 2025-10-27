@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "0ea52505fa98cd1df9a7c2af449f3c58549a3427"
+project_hash = "bcc65849b847f5d2a8c1ff4b58f6271dcc070cdd"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "27cecae79e5cc9935255f90c53bb831cc3c870d7"
@@ -989,7 +989,7 @@ uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
 
 [[deps.TriangularPlateaux]]
-deps = ["JLD2"]
+deps = ["JLD2", "StaticArrays", "Sunny"]
 path = "."
 uuid = "a572323a-de41-413c-be52-a650218af4ba"
 version = "1.0.0-DEV"

@@ -123,3 +123,25 @@ function find_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::String;
 
     return h_curr, E
 end
+
+function magnetization_correction_scf(state::AbstractTriangularPlateau, h, mean_field_values; kwargs...)
+    swt, _ = swts(state, h)
+    scnlswt = SelfConsistentNLSWT(swt)
+    @assert length(mean_field_values) == length(scnlswt.mean_field_values) "Mean field values length mismatch"
+    for i in eachindex(mean_field_values)
+        scnlswt.mean_field_values[i] = mean_field_values[i]
+    end
+    L = Sunny.nbands(swt)
+    H1 = zeros(ComplexF64, 2L, 2L)
+    H2 = zeros(ComplexF64, 2L, 2L)
+    V = zeros(ComplexF64, 2L, 2L)
+    δS = hcubature((0,0,0),(1,1,1); kwargs...) do q
+        dynamical_matrix!(H1, swt, q)
+        swt_hamiltonian_dipole_nlsw!(H2, scnlswt, q)
+        @. H1 += H2
+        bogoliubov!(V, H1)
+        return SVector{L}(-norm2(view(V, L+i, 1:L)) for i in 1:L)
+    end
+
+    return δS[1]
+end
