@@ -7,7 +7,7 @@ function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlatea
        try
         E, _ = excitations_scnlswt(scnlswt, q_ordering)
         E_renormalized = E[1:nbands]
-        jldsave(joinpath(result_path, "scf_$(typeof(state))_J1_$(state.J₁)_J2_$(state.J₂)_h_$(round(h, digits=4)).jld2"); E_renormalized=E_renormalized, mean_field_values=scnlswt.mean_field_values, h=h)
+        jldsave(joinpath(result_path, "scf_$(typeof(state))_J1_$(state.J₁)_J2_$(round(state.J₂, digits))_h_$(round(h, digits=4)).jld2"); E_renormalized=E_renormalized, mean_field_values=scnlswt.mean_field_values, h=h)
         return E_renormalized
        catch _
         @warn "Failed to compute renormalized energies after SCF, skipping renormalized energies calculation"
