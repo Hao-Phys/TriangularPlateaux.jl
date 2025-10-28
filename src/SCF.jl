@@ -1,25 +1,26 @@
-function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlateau, mean_field_values::Vector{ComplexF64}, h, result_path::String;hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
+function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlateau, mean_field_values::Vector{ComplexF64}, h, result_path::String; hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
     (; q_ordering, nbands) = state
+    ftol = get(nlsolve_opts, :ftol, 1e-8)
     swt, _ = swts(state, h)
     scnlswt = SelfConsistentNLSWT(swt)
     try
-       solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts) 
+       sol_ftol = solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
+       if sol_ftol > ftol
+           @warn "SCF did not converge to desired tolerance ftol=$ftol, got sol_ftol=$sol_ftol. Returing to NaN energies"
+           return fill(NaN, nbands)
+       end
        try
-        E, _ = excitations_scnlswt(scnlswt, q_ordering)
-        E_renormalized = E[1:nbands]
-        jldsave(joinpath(result_path, "scf_$(typeof(state))_J1_$(state.J₁)_J2_$(round(state.J₂, digits))_h_$(round(h, digits=4)).jld2"); E_renormalized=E_renormalized, mean_field_values=scnlswt.mean_field_values, h=h)
-        return E_renormalized
+            E, _ = excitations_scnlswt(scnlswt, q_ordering)
+            E_renormalized = E[1:nbands]
+            jldsave(joinpath(result_path, "scf_$(typeof(state))_J1_$(state.J₁)_J2_$(round(state.J₂, digits=4))_h_$(round(h, digits=4)).jld2"); E_renormalized=E_renormalized, mean_field_values=scnlswt.mean_field_values, h=h)
+            return E_renormalized
        catch _
-        @warn "Failed to compute renormalized energies after SCF, skipping renormalized energies calculation"
-        E = zeros(nbands)
-        fill!(E, NaN)
-        return E
+            @warn "Failed to compute renormalized energies after SCF, skipping renormalized energies calculation"
+            return fill(NaN, nbands)
        end
     catch _
         @warn "Failed SCF, skipping renormalized energies calculation"
-        E = zeros(nbands)
-        fill!(E, NaN)
-        return E
+        return fill(NaN, nbands)
     end
 end
 
