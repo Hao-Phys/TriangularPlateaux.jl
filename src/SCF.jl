@@ -40,7 +40,7 @@ function find_lb_scf(state::AbstractTriangularPlateau, Δh, result_path::String;
     println("Calculating reference mean field values of swt_ref")
     scnlswt = SelfConsistentNLSWT(swt)
     try
-         solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
+        solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
     catch _
         @warn "Failed SCF for reference state, cannot proceed. The corresponding state cannot be stable"
         return NaN, NaN
