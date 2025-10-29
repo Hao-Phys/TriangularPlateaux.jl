@@ -118,7 +118,7 @@ function find_lb_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::Stri
     return h_lb, h_ub, E_lb, E_ub
 end
 
-function find_J2_bound_scf(state::AbstractTriangularPlateau, h, ΔJ2, result_path::String; E_tol::Float64=1e-4, max_iter::Int=50, hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
+function find_J2_bound_scf(state::AbstractTriangularPlateau, h, ΔJ2, result_path::String; E_tol::Float64=1e-3, max_iter::Int=50, hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
     (; J₁, J₂, nbands) = state
     isdir(result_path) || mkpath(result_path)
     @assert J₂ == 1/8 * J₁ "Initial J₂ must be at the classical boundary value of 1/8 J₁"
