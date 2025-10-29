@@ -46,7 +46,7 @@ function calculate_mean_field_values_hc_scf(state::AbstractTriangularPlateau, re
     return mean_field_values
 end
 
-function find_lb_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::String; E_tol::Float64=1e-4, max_iter::Int=50, hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
+function find_lb_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::String; E_tol::Float64=1e-3, max_iter::Int=50, hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
     (; J₂, nbands) = state
     isdir(result_path) || mkpath(result_path)
 
