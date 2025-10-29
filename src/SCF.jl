@@ -15,7 +15,7 @@ function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlatea
     end
 end
 
-function calculate_mean_field_values_hc_scf(state::AbstractTriangularPlateau, result_path::String; hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;))
+function calculate_mean_field_values_hc_scf(state::AbstractTriangularPlateau, result_path::String; hcubature_opts::NamedTuple=NamedTuple(;), nlsolve_opts::NamedTuple=NamedTuple(;), save_mean_field_values::Bool=true)
     (; J₁, J₂) = state
 
     if typeof(state) == UUDPlateau
@@ -38,8 +38,10 @@ function calculate_mean_field_values_hc_scf(state::AbstractTriangularPlateau, re
     mean_field_values = copy(scnlswt.mean_field_values)
     println("Reference mean field values calculated")
 
-    filename = joinpath(result_path, "mean_field_values_hc_$(typeof(state))_J1_$(round(state.J₁, digits=4))_J2_$(round(state.J₂, digits=4)).jld2")
-    jldsave(filename; mean_field_values=mean_field_values, hc=hc)
+    if save_mean_field_values
+        filename = joinpath(result_path, "mean_field_values_hc_$(typeof(state))_J1_$(round(state.J₁, digits=4))_J2_$(round(state.J₂, digits=4)).jld2")
+        jldsave(filename; mean_field_values=mean_field_values, hc=hc)
+    end
 
     return mean_field_values
 end
@@ -121,7 +123,7 @@ function find_J2_bound_scf(state::AbstractTriangularPlateau, h, ΔJ2, result_pat
     isdir(result_path) || mkpath(result_path)
     @assert J₂ == 1/8 * J₁ "Initial J₂ must be at the classical boundary value of 1/8 J₁"
 
-    mean_field_values = calculate_mean_field_values_hc_scf(state, result_path; hcubature_opts=hcubature_opts, nlsolve_opts=nlsolve_opts)
+    mean_field_values = calculate_mean_field_values_hc_scf(state, result_path; hcubature_opts=hcubature_opts, nlsolve_opts=nlsolve_opts, save_mean_field_values=false)
 
     iter = 1
     find_bound = false
