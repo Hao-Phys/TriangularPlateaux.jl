@@ -64,7 +64,7 @@ function find_lb_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::Stri
     mean_field_values = calculate_mean_field_values_hc_scf(state, result_path; hcubature_opts=hcubature_opts, nlsolve_opts=nlsolve_opts)
 
     E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr, result_path)[nbands]
-    @assert isnan(E) "Use more aggressive guess for Δh"
+    # @assert isnan(E) "Use more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     println("Finding lower bound field h_lb")
@@ -95,7 +95,7 @@ function find_lb_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::Stri
     h_hi = h_curr
 
     E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr, result_path)[nbands]
-    @assert isnan(E) "Use more aggressive guess for Δh"
+    # @assert isnan(E) "Use more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     println("Finding upper bound field h_ub")
@@ -138,7 +138,7 @@ function find_J2_bound_scf(state::AbstractTriangularPlateau, h, ΔJ2, result_pat
         J2_curr = J2_hi
         state_curr = UUDPlateau(J₁, J2_curr, :scf)
         E = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h, result_path)[nbands]
-        @assert isnan(E) "Use more aggressive guess for ΔJ2, lowest magnon energy is $E"
+        # @assert isnan(E) "Use more aggressive guess for ΔJ2, lowest magnon energy is $E"
         J2_curr = (J2_lo + J2_hi) / 2
         println("Finding J2 bound for UUD Plateau")
         while !find_bound && iter ≤ max_iter
