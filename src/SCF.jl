@@ -34,8 +34,12 @@ function calculate_mean_field_values_hc_scf(state::AbstractTriangularPlateau, re
     mean_field_values = calculate_mean_field_values_lswt(swt_ref; hcubature_opts...)
     println("Calculating reference mean field values of swt_ref")
     scnlswt = SelfConsistentNLSWT(swt_ref)
-    solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
-    mean_field_values = copy(scnlswt.mean_field_values)
+    try
+        solve_self_consistent_nlswt!(scnlswt; mean_field_values, hcubature_opts, nlsolve_opts)
+        mean_field_values = copy(scnlswt.mean_field_values)
+    catch _
+        fill!(mean_field_values, NaN)
+    end
     println("Reference mean field values calculated")
 
     if save_mean_field_values
