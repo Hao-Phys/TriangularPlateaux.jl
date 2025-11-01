@@ -5,17 +5,11 @@ struct UUDPlateau <: AbstractTriangularPlateau
     J₂ :: Float64
     mode :: Symbol
     nbands :: Int
-    q_ordering :: Vec3
 end
 
 function UUDPlateau(J₁::Float64, J₂::Float64, mode::Symbol)
     @assert mode in (:scf, :one_loop, :one_loop_prime) "Mode must be one of :scf, :one_loop, or :one_loop_prime"
-    if J₂/J₁ < 1/8
-        q_ordering = Vec3(1/3, 1/3, 0)
-    else
-        q_ordering = Vec3(1/2, 1/2, 0)
-    end
-    return UUDPlateau(J₁, J₂, mode, 3, q_ordering)
+    return UUDPlateau(J₁, J₂, mode, 3)
 end
 
 struct UUUDPlateau <: AbstractTriangularPlateau
@@ -23,17 +17,11 @@ struct UUUDPlateau <: AbstractTriangularPlateau
     J₂ :: Float64
     mode :: Symbol
     nbands :: Int
-    q_ordering :: Vec3
 end
 
 function UUUDPlateau(J₁::Float64, J₂::Float64, mode::Symbol)
     @assert mode in (:scf, :one_loop, :one_loop_prime) "Mode must be one of :scf, :one_loop, or :one_loop_prime"
-    if J₂/J₁ < 1/8
-        q_ordering = Vec3(1/3, 1/3, 0)
-    else
-        q_ordering = Vec3(1/2, 1/2, 0)
-    end
-    return UUUDPlateau(J₁, J₂, mode, 4, q_ordering)
+    return UUUDPlateau(J₁, J₂, mode, 4)
 end
 
 function calculate_hc(state::UUDPlateau)

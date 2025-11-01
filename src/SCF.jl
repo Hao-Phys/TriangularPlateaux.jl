@@ -1,11 +1,11 @@
-function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlateau, mean_field_values::Vector{ComplexF64}, h)
-    (; q_ordering, nbands) = state
+function renormalized_single_magnon_energies_scf(state::AbstractTriangularPlateau, mean_field_values::Vector{ComplexF64}, h, q::Vec3)
+    (; nbands) = state
     swt, _ = swts(state, h)
     scnlswt = SelfConsistentNLSWT(swt)
 
     update_mean_field_values!(scnlswt, mean_field_values)
     try
-        E, _ = excitations_scnlswt(scnlswt, q_ordering)
+        E, _ = excitations_scnlswt(scnlswt, q)
         E_renormalized = E[1:nbands]
         return E_renormalized
     catch _
@@ -62,15 +62,26 @@ function find_lb_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::Stri
 
     mean_field_values = calculate_mean_field_values_hc_scf(state, result_path; hcubature_opts=hcubature_opts, nlsolve_opts=nlsolve_opts)
 
-    E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr)[nbands]
-    # @assert isnan(E) "Use more aggressive guess for Δh"
+    if typeof(state) == UUDPlateau
+        @assert J₂ ≤ 1/8 * state.J₁ "UUD Plateau state unstable for J₂/J₁ > 1/8. This code cannot be used to find lb/ub in that regime."
+        q_ordering = Vec3(1/3, 1/3, 0)
+    elseif typeof(state) == UUUDPlateau
+        @assert J₂ ≥ 1/8 * state.J₁ "UUUD Plateau state unstable for J₂/J₁ < 1/8. This code cannot be used to find lb/ub in that regime."
+        q_ordering = Vec3(1/2, 1/2, 0)
+    else
+        error("Unsupported state type: $(typeof(state))")
+    end
+
+    E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr, q_ordering)[nbands]
+
+    @warn !isnan(E) "Lowest magnon energy is $E at h=$h_curr, for J₂=$(round(J₂, digits=4)), consider using more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     println("Finding lower bound field h_lb")
     while !find_lb && iter ≤ max_iter
         println("--------------------------------")
         @show J₂, iter, h_curr
-        E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr)[nbands]
+        E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr, q_ordering)[nbands]
         println("Current lowest magnon energy E=$E")
         println("--------------------------------")
         if isnan(E)
@@ -93,15 +104,15 @@ function find_lb_ub_scf(state::AbstractTriangularPlateau, Δh, result_path::Stri
     h_lo = hc
     h_hi = h_curr
 
-    E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr)[nbands]
-    # @assert isnan(E) "Use more aggressive guess for Δh"
+    E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr, q_ordering)[nbands]
+    @warn !isnan(E) "Lowest magnon energy is $E at h=$h_curr, for J₂=$(round(J₂, digits=4)), consider using more aggressive guess for Δh"
     h_curr = (h_hi + h_lo) / 2
 
     println("Finding upper bound field h_ub")
     while !find_ub && iter ≤ max_iter
         println("--------------------------------")
         @show J₂, iter, h_curr
-        E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr)[nbands]
+        E = renormalized_single_magnon_energies_scf(state, mean_field_values, h_curr, q_ordering)[nbands]
         println("Current lowest magnon energy E=$E")
         println("--------------------------------")
         if isnan(E)
@@ -133,15 +144,18 @@ function find_J2_bound_scf(state::UUDPlateau, h, ΔJ₂, result_path::String; E_
     J2_hi = J₂ + ΔJ₂
     J2_curr = J2_hi
     state_curr = UUDPlateau(J₁, J2_curr, :scf)
-    E = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h)[nbands]
-    # @assert isnan(E) "Use more aggressive guess for ΔJ2, lowest magnon energy is $E"
+
+    # For UUD, J₂>1/8J₁, the minimum of magnon band shifts to M point
+    q_ordering = Vec3(1/2, 1/2, 0)
+    E = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h, q_ordering)[nbands]
+    @warn !isnan(E) "Lowest magnon energy is $E at J2=$J2_curr, and h=$h, consider using more aggressive guess for ΔJ2"
     J2_curr = (J2_lo + J2_hi) / 2
     println("Finding J2 bound for UUD Plateau")
     while !find_bound && iter ≤ max_iter
         println("--------------------------------")
         @show J2_curr, iter
         state_curr = UUDPlateau(J₁, J2_curr, :scf)
-        E = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h)[nbands]
+        E = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h, q_ordering)[nbands]
         println("Current lowest magnon energy E=$E")
         println("--------------------------------")
         if isnan(E)
@@ -172,15 +186,34 @@ function find_J2_bound_scf(state::UUUDPlateau, h, ΔJ2, result_path::String; E_t
     J2_lo = J₂ - ΔJ2
     J2_curr = J2_lo
     state_curr = UUUDPlateau(J₁, J2_curr, :scf)
-    E = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h)[nbands]
-    # @assert isnan(E) "Use more aggressive guess for ΔJ2, lowest magnon energy is $E"
+
+    # For the UUUD phase, J₂<1/8J₁, the minimum of magnon band can be at K or M point
+    q_K = Vec3(1/3, 1/3, 0)
+    q_M = Vec3(1/2, 1/2, 0)
+
+    E_K = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h, q_K)[nbands]
+    E_M = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h, q_M)[nbands]
+    @warn !isnan(E_K) || !isnan(E_M) "Use more aggressive guess for ΔJ2, lowest magnon energies are E_K=$E_K, E_M=$E_M"
+
+    if isnan(E_K) || isnan(E_M)
+        E = NaN
+    else
+        E = min(E_K, E_M)
+    end
+
     J2_curr = (J2_lo + J2_hi) / 2
     println("Finding J2 bound for UUUD Plateau")
     while !find_bound && iter ≤ max_iter
         println("--------------------------------")
         @show J2_curr, iter
         state_curr = UUUDPlateau(J₁, J2_curr, :scf)
-        E = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h)[nbands]
+        E_K = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h, q_K)[nbands]
+        E_M = renormalized_single_magnon_energies_scf(state_curr, mean_field_values, h, q_M)[nbands]
+        if isnan(E_K) || isnan(E_M)
+            E = NaN
+        else
+            E = min(E_K, E_M)
+        end
         println("Current lowest magnon energy E=$E")
         println("--------------------------------")
         if isnan(E)
