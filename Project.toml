@@ -6,12 +6,14 @@ authors = ["Hao Zhang"]
 [deps]
 HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Sunny = "2b4a2ac8-8f8b-43e8-abf4-3cb0c45e8736"
 
 [compat]
 HCubature = "1.7.0"
 JLD2 = "0.5.15"
+LinearAlgebra = "1.12.0"
 StaticArrays = "1.9.15"
 Sunny = "0.7.5"
 julia = "1.12"

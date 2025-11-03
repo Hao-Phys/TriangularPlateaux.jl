@@ -251,3 +251,96 @@ function magnetization_correction_scf(state::AbstractTriangularPlateau, h, mean_
 
     return δS[1]
 end
+
+function ground_state_energy_scf(state::AbstractTriangularPlateau, h, mean_field_values; kwargs...)
+    swt, _ = swts(state, h)
+    (; sys) = swt
+    E_gs = 0.0
+    # Classical energy
+    E_cl = classical_energy(state, h)
+    println("Classical energy per site: $E_cl")
+    E_gs += E_cl
+
+    scnlswt = SelfConsistentNLSWT(swt)
+    @assert length(mean_field_values) == length(scnlswt.mean_field_values) "Mean field values length mismatch"
+    for i in eachindex(mean_field_values)
+        scnlswt.mean_field_values[i] = mean_field_values[i]
+    end
+    # Zero-point energy correction
+    Natoms = Sunny.natoms(sys.crystal)
+    L = Sunny.nbands(swt)
+    H1 = zeros(ComplexF64, 2L, 2L)
+    H2 = zeros(ComplexF64, 2L, 2L)
+    V = zeros(ComplexF64, 2L, 2L)
+
+    # The uniform correction (trace of the (1,1)-block of the dynamical matrix)
+    dynamical_matrix!(H1, swt, zero(Vec3))
+    swt_hamiltonian_dipole_nlsw!(H2, scnlswt, zero(Vec3))
+    @. H1 += H2
+    δE₁ = -real(tr(view(H1, 1:L, 1:L))) / (2Natoms)
+    E_gs += δE₁
+
+    # Integration over the Brillouin zone
+    δE₂ = hcubature((0,0,0), (1,1,1); kwargs...) do q
+        dynamical_matrix!(H1, swt, q)
+        swt_hamiltonian_dipole_nlsw!(H2, scnlswt, q)
+        @. H1 += H2
+        ωs = bogoliubov!(V, H1)
+        return sum(view(ωs, 1:L)) / (2Natoms)
+    end
+    # Discard the error bar in the integration
+    E_gs += δE₂[1]
+
+    println("Zero-point energy corrections: δE₁=$δE₁, δE₂=$(δE₂[1])")
+    println("Energy per site up to quartic order before quartic correction: $E_gs")
+
+    # Correction from the quartic terms
+    δE₄ = 0.0
+    index = 0
+    (; real_space_quartic_vertices) = scnlswt
+    for (i, int) in enumerate(sys.interactions_union)
+        # Single-ion anisotropy
+        (; c2, c4, c6) = swt.data.stevens_coefs[i]
+        @assert iszero(c2) "Rank 2 Stevens operators not supported in :dipole non-perturbative calculations yet"
+        @assert iszero(c4) "Rank 4 Stevens operators not supported in :dipole non-perturbative calculations yet"
+        @assert iszero(c6) "Rank 6 Stevens operators not supported in :dipole non-perturbative calculations yet"
+        for coupling in int.pair
+            (; isculled) = coupling
+            isculled && break
+            index += 1
+
+            Nii, Njj, Nij, Δii, Δjj, Δij = mean_field_values[6*(index-1)+1:6*(index-1)+6]
+            (; V41, V42, V43) = real_space_quartic_vertices[index]
+            if !iszero(coupling.bilin)
+                Q = V41 * conj(Nij) + V42 * Δii + conj(V42) * conj(Δjj) + 2 * conj(V43) * (Nii + Njj)
+                δE₄ += 2 * real(Q * Nij)
+
+                Qi = V41 * Njj + 2 * V42 * Δij + 2 * conj(V42) * conj(Δij) + 2 * V43 * conj(Nij) + 2 * conj(V43) * Nij
+                δE₄ += real(Qi * Nii)
+
+                Qj = V41 * Nii + 2 * V42 * Δij + 2 * conj(V42) * conj(Δij) + 2 * V43 * conj(Nij) + 2 * conj(V43) * Nij
+                δE₄ += real(Qj * Njj)
+
+                P = V41 * conj(Δij) + 2 * V42 * (Nii + Njj) + V43 * conj(Δjj) + conj(V43) * conj(Δii)
+                δE₄ += 2 * real(P * Δij)
+
+                Pi = V42 * Nij + V43 * conj(Δij)
+                δE₄ += 2 * real(Pi * Δii)
+
+                Pj = V42 * conj(Nij) + conj(V43) * conj(Δij)
+                δE₄ += 2 * real(Pj * Δjj)
+            end
+
+            # Biquadratic exchange
+            if !iszero(coupling.biquad)
+                @error "Biquadratic exchange not supported in :dipole perturbative calculations yet"
+            end
+        end
+    end
+
+    E_gs += δE₄
+    println("Quartic energy correction: δE₄=$δE₄")
+    println("Total ground state energy per site up to quartic order: $E_gs")
+
+    return (E_gs, E_cl, δE₁, δE₂[1], δE₄)
+end
