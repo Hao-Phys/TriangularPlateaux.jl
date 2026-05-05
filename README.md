@@ -4,13 +4,13 @@
 
 This package implements the self-consistent one-loop spin-wave theory calculations presented in:
 
-> **$J_1$-$J_2$ Triangular Lattice Antiferromagnet in a Magnetic Field**  
+> **$J_1-J_2$ Triangular Lattice Antiferromagnet in a Magnetic Field**  
 > Anna Keselman, Xinyuan Xu, Hao Zhang, Cristian D. Batista, Oleg A. Starykh  
 > [arXiv:2512.02150](https://arxiv.org/abs/2512.02150) (2025)
 
 ## Overview
 
-The package computes the magnon excitation spectra and magnetization plateau phase boundaries of the spin-1/2 $J_1$-$J_2$ triangular-lattice Heisenberg antiferromagnet in an applied magnetic field. It combines linear spin-wave theory (LSWT) with a self-consistent normal-ordering correction to stabilize the up-up-down (UUD) and up-up-up-down (UUUD) magnetization plateau phases, which are induced by quantum fluctuations.
+The package computes the magnon excitation spectra and magnetization plateau phase boundaries of the spin-1/2 $J_1-J_2$ triangular-lattice Heisenberg antiferromagnet in an applied magnetic field. It combines linear spin-wave theory (LSWT) with a self-consistent normal-ordering correction to stabilize the up-up-down (UUD) and up-up-up-down (UUUD) magnetization plateau phases, which are induced by quantum fluctuations.
 
 The implementation is built on the [Sunny.jl](https://github.com/SunnySuite/Sunny.jl) platform for spin dynamics calculations.
 
