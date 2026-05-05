@@ -35,14 +35,7 @@ Pkg.add(url="https://github.com/Hao-Phys/TriangularPlateaux.jl")
 using TriangularPlateaux
 
 # Set model parameters
-J1 = 1.0
-J2 = 0.1   # in units of J1
-S  = 0.5
-
-# Compute self-consistent spectrum at a given field and momentum
-# (see examples/ for full phase diagram calculations)
 ```
-
 See the `examples/` directory for scripts reproducing the figures in the paper.
 
 ## Citation
