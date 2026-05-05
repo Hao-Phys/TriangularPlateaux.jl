@@ -19,7 +19,7 @@ function renormalized_single_magnon_energies_one_loop_prime(state::AbstractTrian
     end
 end
 
-function calculate_mean_field_values_hc_one_loop_prime(state::AbstractTriangularPlateau, result_path::String; hcubature_opts::NamedTuple=NamedTuple(;), save_mean_field_values::Bool=true)
+function calculate_mean_field_values_hc_one_loop(state::AbstractTriangularPlateau, result_path::String; hcubature_opts::NamedTuple=NamedTuple(;), save_mean_field_values::Bool=true)
     (; J₁, J₂, mode) = state
 
     if typeof(state) == UUDPlateau
@@ -161,4 +161,85 @@ function ground_state_energy_one_loop_prime(state::AbstractTriangularPlateau, h;
     println("Total ground state energy per site up to quartic order: $E_gs")
 
     return (E_gs, E_cl, δE₁, δE₂[1], δE₄)
+end
+
+function find_lb_ub_one_loop_prime(state::AbstractTriangularPlateau, Δh, result_path::String; E_tol::Float64=1e-3, max_iter::Int=50, hcubature_opts::NamedTuple=NamedTuple(;))
+    (; J₂, nbands) = state
+    isdir(result_path) || mkpath(result_path)
+
+    iter = 1
+    find_lb = false
+    hc = calculate_hc(state)
+    h_curr = hc - Δh
+    h_lo = h_curr
+    h_hi = hc
+
+    if typeof(state) == UUDPlateau
+        @assert J₂ ≤ 1/8 * state.J₁ "UUD Plateau state unstable for J₂/J₁ > 1/8. This code cannot be used to find lb/ub in that regime."
+        q_ordering = Vec3(1/3, 1/3, 0)
+    elseif typeof(state) == UUUDPlateau
+        @assert J₂ ≥ 1/8 * state.J₁ "UUUD Plateau state unstable for J₂/J₁ < 1/8. This code cannot be used to find lb/ub in that regime."
+        q_ordering = Vec3(1/2, 1/2, 0)
+    else
+        error("Unsupported state type: $(typeof(state))")
+    end
+
+    E = renormalized_single_magnon_energies_one_loop_prime(state, h_curr, q_ordering; hcubature_opts)[nbands]
+
+    @warn !isnan(E) "Lowest magnon energy is $E at h=$h_curr, for J₂=$(round(J₂, digits=4)), consider using more aggressive guess for Δh"
+    h_curr = (h_hi + h_lo) / 2
+
+    println("Finding lower bound field h_lb")
+    while !find_lb && iter ≤ max_iter
+        println("--------------------------------")
+        @show J₂, iter, h_curr
+        E = renormalized_single_magnon_energies_one_loop_prime(state, h_curr, q_ordering; hcubature_opts)[nbands]
+        println("Current lowest magnon energy E=$E")
+        println("--------------------------------")
+        if isnan(E)
+            h_lo = h_curr
+            h_curr = (h_lo + h_hi) / 2
+        elseif E > E_tol
+            h_hi = h_curr
+            h_curr = (h_lo + h_hi) / 2
+        else
+            find_lb = true
+        end
+        iter += 1
+    end
+    h_lb, E_lb = h_curr, E
+
+    iter = 1
+    find_ub = false
+    hc = calculate_hc(state)
+    h_curr = hc + Δh
+    h_lo = hc
+    h_hi = h_curr
+
+    E = renormalized_single_magnon_energies_one_loop_prime(state, h_curr, q_ordering; hcubature_opts)[nbands]
+    @warn !isnan(E) "Lowest magnon energy is $E at h=$h_curr, for J₂=$(round(J₂, digits=4)), consider using more aggressive guess for Δh"
+    h_curr = (h_hi + h_lo) / 2
+
+    println("Finding upper bound field h_ub")
+    while !find_ub && iter ≤ max_iter
+        println("--------------------------------")
+        @show J₂, iter, h_curr
+        E = renormalized_single_magnon_energies_one_loop_prime(state, h_curr, q_ordering; hcubature_opts)[nbands]
+        println("Current lowest magnon energy E=$E")
+        println("--------------------------------")
+        if isnan(E)
+            h_hi = h_curr
+            h_curr = (h_lo + h_hi) / 2
+        elseif E > E_tol
+            h_lo = h_curr
+            h_curr = (h_lo + h_hi) / 2
+        else
+            find_ub = true
+        end
+        iter += 1
+    end
+
+    h_ub, E_ub = h_curr, E
+
+    return h_lb, h_ub, E_lb, E_ub
 end

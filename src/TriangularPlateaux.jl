@@ -15,7 +15,10 @@ include("SCF.jl")
 export find_lb_ub_scf, find_J2_bound_scf, renormalized_single_magnon_energies_scf, magnetization_correction_scf, ground_state_energy_scf
 
 include("OneLoopPrime.jl")
-export magnetization_correction_one_loop_prime, ground_state_energy_one_loop_prime, calculate_mean_field_values_hc_one_loop_prime
+export magnetization_correction_one_loop_prime, ground_state_energy_one_loop_prime, calculate_mean_field_values_hc_one_loop_prime, renormalized_single_magnon_energies_one_loop_prime
+
+include("OneLoop.jl")
+export renormalized_single_magnon_energies_one_loop
 
 import StaticArrays: SVector
 import HCubature: hcubature
